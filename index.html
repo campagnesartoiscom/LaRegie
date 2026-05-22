@@ -1,0 +1,2301 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LaRégie — Gestion du parc matériel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0f13;
+    --surface: #17171e;
+    --surface2: #1e1e28;
+    --surface3: #252533;
+    --border: #2e2e3e;
+    --accent: #7c6af7;
+    --accent2: #f7c26a;
+    --accent3: #6af7c2;
+    --danger: #f76a6a;
+    --text: #e8e8f0;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-lg: 0 12px 48px rgba(0,0,0,0.6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── UTILS ── */
+  .hidden { display: none !important; }
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-1 { gap: 8px; }
+  .gap-2 { gap: 16px; }
+  .gap-3 { gap: 24px; }
+  .text-accent { color: var(--accent); }
+  .text-danger { color: var(--danger); }
+  .text-muted { color: var(--text2); }
+  .text-sm { font-size: 13px; }
+  .text-xs { font-size: 11px; }
+  .fw-500 { font-weight: 500; }
+  .fw-600 { font-weight: 600; }
+  .mt-1 { margin-top: 8px; }
+  .mt-2 { margin-top: 16px; }
+  .mb-1 { margin-bottom: 8px; }
+  .mb-2 { margin-bottom: 16px; }
+  .w-full { width: 100%; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 500; line-height: 1;
+  }
+  .badge-accent { background: rgba(124,106,247,0.18); color: var(--accent); }
+  .badge-gold { background: rgba(247,194,106,0.18); color: var(--accent2); }
+  .badge-green { background: rgba(106,247,194,0.18); color: var(--accent3); }
+  .badge-red { background: rgba(247,106,106,0.18); color: var(--danger); }
+  .badge-gray { background: var(--surface3); color: var(--text2); }
+
+  /* ── BUTTON ── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 18px; border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.2s; white-space: nowrap;
+    text-decoration: none;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #9080ff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,106,247,0.4); }
+  .btn-secondary { background: var(--surface3); color: var(--text); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-gold { background: var(--accent2); color: #1a1008; }
+  .btn-gold:hover { background: #f9cc7e; transform: translateY(-1px); }
+  .btn-green { background: var(--accent3); color: #0a1a14; }
+  .btn-green:hover { background: #88f9d0; }
+  .btn-danger { background: rgba(247,106,106,0.15); color: var(--danger); border: 1px solid rgba(247,106,106,0.3); }
+  .btn-danger:hover { background: rgba(247,106,106,0.25); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-sm { padding: 6px 12px; font-size: 13px; }
+  .btn-icon { padding: 8px; width: 36px; height: 36px; border-radius: var(--radius-sm); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+  .card-hover { transition: all 0.2s; }
+  .card-hover:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
+
+  /* ── FORM ── */
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 13px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .form-input {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .form-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,106,247,0.12); }
+  .form-input::placeholder { color: var(--text3); }
+  select.form-input { cursor: pointer; }
+  .form-grid { display: grid; gap: 16px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    opacity: 0; animation: fadeIn 0.2s forwards;
+  }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); width: 100%; max-width: 540px;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(20px); animation: slideUp 0.25s forwards;
+  }
+  .modal-lg { max-width: 720px; }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 20px; }
+  .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes slideUp { to { transform: translateY(0); } }
+
+  /* ── TOAST ── */
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px; z-index: 2000;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; min-width: 240px; max-width: 340px;
+    box-shadow: var(--shadow); pointer-events: all;
+    animation: toastIn 0.3s ease, toastOut 0.3s ease forwards;
+    animation-delay: 0s, 3.5s;
+  }
+  .toast.success { border-left: 3px solid var(--accent3); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--accent); }
+  @keyframes toastIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+  @keyframes toastOut { to { opacity:0; transform: translateX(40px); } }
+
+  /* ── LOADER ── */
+  .loader {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 3px solid var(--border); border-top-color: var(--accent);
+    animation: spin 0.7s linear infinite;
+  }
+  .loader-sm { width: 18px; height: 18px; border-width: 2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── NAV ── */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,15,19,0.9); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-logo {
+    font-family: 'DM Serif Display', serif; font-size: 22px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .nav-tabs {
+    display: flex; align-items: center; gap: 2px;
+    background: var(--surface2); border-radius: var(--radius-sm);
+    padding: 4px;
+  }
+  .nav-tab {
+    padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+    cursor: pointer; color: var(--text2); transition: all 0.2s; border: none;
+    background: transparent; font-family: 'DM Sans', sans-serif;
+  }
+  .nav-tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 12px 5px 5px; font-size: 13px;
+  }
+  .user-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600; color: #fff;
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main-content { padding: 28px 24px; max-width: 1400px; margin: 0 auto; }
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 30px; line-height: 1.2; }
+  .page-subtitle { color: var(--text2); margin-top: 6px; }
+
+  /* ── STATS GRID ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content:''; position: absolute; top: 0; right: 0;
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--stat-color, var(--accent));
+    opacity: 0.08; transform: translate(30%, -30%);
+  }
+  .stat-value { font-size: 32px; font-weight: 600; font-family: 'DM Serif Display', serif; }
+  .stat-label { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .stat-icon { font-size: 22px; margin-bottom: 10px; }
+
+  /* ── CALENDAR ── */
+  .calendar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .cal-header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .cal-title { font-family: 'DM Serif Display', serif; font-size: 18px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+  .cal-day-name { padding: 10px; text-align: center; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+  .cal-cell {
+    min-height: 72px; padding: 6px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s; position: relative;
+  }
+  .cal-cell:nth-child(7n) { border-right: none; }
+  .cal-cell:hover { background: var(--surface2); }
+  .cal-cell.today { background: rgba(124,106,247,0.08); }
+  .cal-cell.other-month { opacity: 0.35; }
+  .cal-cell.selected { background: rgba(124,106,247,0.15); outline: 1px inset var(--accent); }
+  .cal-date { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+  .cal-date.today-num { background: var(--accent); color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .cal-event {
+    font-size: 10px; padding: 2px 5px; border-radius: 3px;
+    margin-bottom: 2px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  /* ── MATERIAL GRID ── */
+  .material-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .material-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px;
+    transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden;
+  }
+  .material-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .material-card.unavailable { opacity: 0.5; cursor: not-allowed; }
+  .material-card.unavailable:hover { transform: none; border-color: var(--border); box-shadow: none; }
+  .material-icon { font-size: 28px; margin-bottom: 12px; }
+  .material-name { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+  .material-cat { font-size: 12px; color: var(--text3); margin-bottom: 10px; }
+  .material-stock { display: flex; align-items: center; justify-content: space-between; }
+  .stock-bar-wrap { flex: 1; height: 4px; background: var(--border); border-radius: 2px; margin-right: 10px; }
+  .stock-bar { height: 100%; border-radius: 2px; background: var(--accent3); transition: width 0.4s; }
+  .stock-bar.low { background: var(--accent2); }
+  .stock-bar.none { background: var(--danger); }
+  .qty-badge { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .in-cart-badge {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--accent); color: #fff;
+    width: 22px; height: 22px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+
+  /* ── CART ── */
+  .cart-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+    position: sticky; top: 80px; max-height: calc(100vh - 120px); overflow-y: auto;
+  }
+  .cart-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item-name { flex: 1; font-size: 14px; }
+  .qty-control { display: flex; align-items: center; gap: 6px; }
+  .qty-btn { width: 26px; height: 26px; border-radius: 6px; background: var(--surface3); border: none; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background 0.15s; }
+  .qty-btn:hover { background: var(--border); }
+  .qty-num { font-size: 14px; font-weight: 600; min-width: 20px; text-align: center; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; font-size: 14px; border-bottom: 1px solid rgba(46,46,62,0.5); }
+  tr:hover td { background: var(--surface2); }
+  tr:last-child td { border-bottom: none; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 20px; width: fit-content; }
+  .tab { padding: 7px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.2s; border: none; background: transparent; font-family: 'DM Sans', sans-serif; }
+  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+  /* ── FILTER BAR ── */
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  .search-input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 9px 14px 9px 38px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s; flex: 1; min-width: 180px;
+  }
+  .search-input:focus { outline: none; border-color: var(--accent); }
+  .search-wrap { position: relative; flex: 1; min-width: 180px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 15px; pointer-events: none; }
+
+  /* ── SECTION HEADER ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 20px; }
+
+  /* ── LOGIN PAGE ── */
+  .login-page {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at 20% 50%, rgba(124,106,247,0.08) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 20%, rgba(106,247,194,0.05) 0%, transparent 50%);
+  }
+  .login-box {
+    width: 100%; max-width: 400px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 40px; box-shadow: var(--shadow-lg);
+  }
+  .login-logo { font-family: 'DM Serif Display', serif; font-size: 32px; margin-bottom: 6px; display: flex; align-items: center; gap: 12px; }
+  .login-sub { color: var(--text2); font-size: 14px; margin-bottom: 32px; }
+  .login-tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 24px; }
+  .login-tab { flex: 1; padding: 7px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text2); transition: all 0.2s; border: none; background: transparent; font-family: 'DM Sans', sans-serif; text-align: center; }
+  .login-tab.active { background: var(--surface); color: var(--text); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text2); }
+  .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+  .empty-state-text { font-size: 16px; }
+  .empty-state-sub { font-size: 14px; color: var(--text3); margin-top: 6px; }
+
+  /* ── DASHBOARD COLS ── */
+  .dashboard-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; }
+  .material-layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+
+  /* ── PROGRESS ── */
+  .progress-wrap { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  /* ── TIMELINE ── */
+  .timeline-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .timeline-item:last-child { border-bottom: none; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .timeline-content { flex: 1; }
+  .timeline-title { font-size: 14px; font-weight: 500; }
+  .timeline-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  /* ── CHECKLIST POINTAGE ── */
+  .check-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+    background: var(--surface2); border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+  }
+  .check-status { width: 28px; height: 28px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+  .check-status.checked { background: var(--accent3); border-color: var(--accent3); }
+  .check-status.partial { background: var(--accent2); border-color: var(--accent2); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .dashboard-layout, .material-layout { grid-template-columns: 1fr; }
+    .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+    .cart-panel { position: static; }
+    .nav-tabs { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .main-content { padding: 16px; }
+    .stats-grid { grid-template-columns: 1fr; }
+    .material-grid { grid-template-columns: 1fr 1fr; }
+    .navbar { padding: 0 16px; }
+    .page-title { font-size: 24px; }
+    .modal { margin: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ════════════════════════════════════════
+     PAGE LOGIN
+════════════════════════════════════════ -->
+<div id="loginPage" class="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="nav-logo-dot"></div>
+      LaRégie
+    </div>
+    <div class="login-sub">Gestion du parc matériel</div>
+
+    <div class="login-tabs" id="loginTabs">
+      <button class="login-tab active" onclick="switchLoginTab('login')">Connexion</button>
+      <button class="login-tab" onclick="switchLoginTab('register')">Inscription</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="loginForm">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">Identifiant</label>
+          <input type="text" class="form-input" id="loginUsername" placeholder="Votre identifiant" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div id="loginError" class="hidden" style="color:var(--danger);font-size:13px;text-align:center;padding:8px;background:rgba(247,106,106,0.1);border-radius:6px;"></div>
+        <button class="btn btn-primary w-full" style="margin-top:8px;" id="btnLogin">
+          Se connecter
+        </button>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="registerForm" class="hidden">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div class="form-group">
+          <label class="form-label">Prénom Nom</label>
+          <input type="text" class="form-input" id="regName" placeholder="Jean Dupont">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="regEmail" placeholder="jean@exemple.fr">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Identifiant</label>
+          <input type="text" class="form-input" id="regUsername" placeholder="Choisissez un identifiant">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mot de passe</label>
+          <input type="password" class="form-input" id="regPassword" placeholder="••••••••">
+        </div>
+        <div id="registerError" class="hidden" style="color:var(--danger);font-size:13px;text-align:center;padding:8px;background:rgba(247,106,106,0.1);border-radius:6px;"></div>
+        <button class="btn btn-primary w-full" style="margin-top:8px;" id="btnRegister">
+          Créer mon compte
+        </button>
+        <p class="text-xs text-muted" style="text-align:center;">Votre compte sera actif après validation par un admin.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     APP PRINCIPALE
+════════════════════════════════════════ -->
+<div id="appPage" class="hidden">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <div class="nav-logo-dot"></div>
+      LaRégie
+    </div>
+
+    <!-- Agent tabs -->
+    <div class="nav-tabs" id="agentNavTabs">
+      <button class="nav-tab active" onclick="showSection('catalogue')">📦 Catalogue</button>
+      <button class="nav-tab" onclick="showSection('mesReservations')">📋 Mes réservations</button>
+      <button class="nav-tab" onclick="showSection('agenda')">📅 Agenda</button>
+    </div>
+
+    <!-- Admin tabs -->
+    <div class="nav-tabs hidden" id="adminNavTabs">
+      <button class="nav-tab active" onclick="showSection('dashboard')">📊 Dashboard</button>
+      <button class="nav-tab" onclick="showSection('catalogue')">📦 Catalogue</button>
+      <button class="nav-tab" onclick="showSection('reservations')">📋 Réservations</button>
+      <button class="nav-tab" onclick="showSection('pointage')">✅ Pointage</button>
+      <button class="nav-tab" onclick="showSection('agenda')">📅 Agenda</button>
+      <button class="nav-tab" onclick="showSection('stock')">🗄️ Stock</button>
+      <button class="nav-tab" onclick="showSection('utilisateurs')">👥 Utilisateurs</button>
+    </div>
+
+    <div class="nav-right">
+      <div class="user-chip" onclick="openModal('modalProfil')" style="cursor:pointer;" title="Mon profil">
+        <div class="user-avatar" id="userAvatar">?</div>
+        <span id="userNameDisplay">—</span>
+        <span style="font-size:11px;color:var(--text3);margin-left:2px;">▾</span>
+      </div>
+      <button class="btn btn-ghost btn-sm btn-icon" id="btnConfig" title="Statut backend" onclick="openModal('modalConfig')" style="display:none;">⚙️</button>
+      <button class="btn btn-ghost btn-sm" onclick="handleLogout()">Déconnexion</button>
+    </div>
+  </nav>
+
+  <div class="main-content">
+
+    <!-- ─── SECTION CATALOGUE ─── -->
+    <section id="sectionCatalogue" class="hidden">
+      <div class="page-header">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="page-title">Catalogue matériel</h1>
+            <p class="page-subtitle">Sélectionnez les dates et ajoutez du matériel à votre panier</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date selector -->
+      <div class="card mb-2" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label class="form-label">Date de début</label>
+          <input type="date" class="form-input" id="resDateDebut" onchange="filterMaterials()">
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label class="form-label">Demi-journée</label>
+          <select class="form-input" id="resPeriodeDebut" onchange="filterMaterials()">
+            <option value="matin">Matin</option>
+            <option value="apm">Après-midi</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label class="form-label">Date de fin</label>
+          <input type="date" class="form-input" id="resDateFin" onchange="filterMaterials()">
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label class="form-label">Demi-journée</label>
+          <select class="form-input" id="resPeriodeFin" onchange="filterMaterials()">
+            <option value="matin">Matin</option>
+            <option value="apm" selected>Après-midi</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="material-layout">
+        <div>
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" placeholder="Rechercher..." id="searchMaterial" oninput="renderMaterials()">
+            </div>
+            <select class="form-input" id="filterCategory" style="width:auto;min-width:150px;" onchange="renderMaterials()">
+              <option value="">Toutes catégories</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text2);cursor:pointer;">
+              <input type="checkbox" id="filterAvailOnly" onchange="renderMaterials()" style="accent-color:var(--accent);"> Dispos uniquement
+            </label>
+          </div>
+          <div class="material-grid" id="materialGrid">
+            <div style="grid-column:1/-1;" class="flex items-center justify-center" style="padding:40px;">
+              <div class="loader"></div>
+            </div>
+          </div>
+        </div>
+        <!-- CART -->
+        <div>
+          <div class="cart-panel">
+            <div class="section-header">
+              <h3 class="section-title">🛒 Panier</h3>
+              <span class="badge badge-accent" id="cartCount">0 article</span>
+            </div>
+            <div id="cartItems">
+              <div class="empty-state" style="padding:30px 10px;">
+                <div class="empty-state-icon">🛒</div>
+                <div class="empty-state-text">Panier vide</div>
+                <div class="empty-state-sub">Cliquez sur un matériel pour l'ajouter</div>
+              </div>
+            </div>
+            <div id="cartFooter" class="hidden" style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+              <div class="form-group">
+                <label class="form-label">Notes (optionnel)</label>
+                <input type="text" class="form-input" id="cartNotes" placeholder="Motif, lieu d'utilisation...">
+              </div>
+              <button class="btn btn-primary w-full" onclick="confirmReservation()">
+                ✅ Confirmer la réservation
+              </button>
+              <button class="btn btn-ghost btn-sm w-full" onclick="clearCart()">Vider le panier</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION MES RESERVATIONS (Agent) ─── -->
+    <section id="sectionMesReservations" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Mes réservations</h1>
+        <p class="page-subtitle">Historique et réservations en cours</p>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="filterMyRes('active')">En cours</button>
+        <button class="tab" onclick="filterMyRes('future')">À venir</button>
+        <button class="tab" onclick="filterMyRes('past')">Passées</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Matériel</th>
+                <th>Qté</th>
+                <th>Du</th>
+                <th>Au</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="myResTableBody"></tbody>
+          </table>
+        </div>
+        <div id="myResEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">Aucune réservation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION AGENDA ─── -->
+    <section id="sectionAgenda" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Agenda des réservations</h1>
+        <p class="page-subtitle">Vue calendrier du matériel réservé</p>
+      </div>
+      <div class="calendar-wrap" id="calendarWrap">
+        <div class="cal-header">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="changeMonth(-1)">◀</button>
+          <div class="cal-title" id="calTitle"></div>
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="changeMonth(1)">▶</button>
+        </div>
+        <div class="cal-grid" id="calDayNames"></div>
+        <div class="cal-grid" id="calCells"></div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION DASHBOARD ADMIN ─── -->
+    <section id="sectionDashboard" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Vue temps réel du parc matériel</p>
+      </div>
+
+      <div class="stats-grid" id="dashStats">
+        <div class="stat-card" style="--stat-color:var(--accent)">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value" id="statTotalMat">—</div>
+          <div class="stat-label">Références matériel</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--accent2)">
+          <div class="stat-icon">🚀</div>
+          <div class="stat-value" id="statDepart">—</div>
+          <div class="stat-label">Départs aujourd'hui</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--accent3)">
+          <div class="stat-icon">↩️</div>
+          <div class="stat-value" id="statRetour">—</div>
+          <div class="stat-label">Retours aujourd'hui</div>
+        </div>
+        <div class="stat-card" style="--stat-color:var(--danger)">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-value" id="statRetard">—</div>
+          <div class="stat-label">En retard de retour</div>
+        </div>
+      </div>
+
+      <div class="dashboard-layout">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- À sortir prochainement -->
+          <div class="card">
+            <div class="section-header">
+              <h3 class="section-title">🚀 À sortir prochainement</h3>
+              <span class="badge badge-gold">7 jours</span>
+            </div>
+            <div id="dashDepart"></div>
+          </div>
+
+          <!-- Retours prochains -->
+          <div class="card">
+            <div class="section-header">
+              <h3 class="section-title">↩️ Retours prochains</h3>
+              <span class="badge badge-green">7 jours</span>
+            </div>
+            <div id="dashRetour"></div>
+          </div>
+
+          <!-- En retard -->
+          <div class="card">
+            <div class="section-header">
+              <h3 class="section-title">⚠️ Retards</h3>
+              <span class="badge badge-red" id="dashRetardCount">0</span>
+            </div>
+            <div id="dashRetard"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="card">
+            <div class="section-header">
+              <h3 class="section-title">📊 Stock restant</h3>
+            </div>
+            <div id="dashStock"></div>
+          </div>
+
+          <!-- Rappels email -->
+          <div class="card">
+            <div class="section-header">
+              <h3 class="section-title">📧 Rappels</h3>
+            </div>
+            <p class="text-sm text-muted mb-2">Envoyer les rappels pour les départs de demain</p>
+            <button class="btn btn-primary w-full btn-sm" onclick="sendReminders()">
+              Envoyer les rappels
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION RESERVATIONS ADMIN ─── -->
+    <section id="sectionReservations" class="hidden">
+      <div class="page-header">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="page-title">Toutes les réservations</h1>
+            <p class="page-subtitle">Gestion complète des réservations</p>
+          </div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;min-width:200px;">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Rechercher par agent, matériel..." id="searchRes" oninput="renderAdminRes()">
+        </div>
+        <select class="form-input" id="filterResStatut" style="width:auto;" onchange="renderAdminRes()">
+          <option value="">Tous statuts</option>
+          <option value="active">Active</option>
+          <option value="sortie">Sortie</option>
+          <option value="rendue">Rendue</option>
+          <option value="annulee">Annulée</option>
+        </select>
+        <input type="date" class="form-input" id="filterResDate" style="width:auto;" onchange="renderAdminRes()">
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Agent</th>
+                <th>Matériel</th>
+                <th>Qté</th>
+                <th>Du</th>
+                <th>Au</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminResTableBody"></tbody>
+          </table>
+        </div>
+        <div id="adminResEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">📋</div>
+          <div class="empty-state-text">Aucune réservation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION POINTAGE ─── -->
+    <section id="sectionPointage" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Pointage</h1>
+        <p class="page-subtitle">Enregistrement des départs et retours effectifs</p>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchPointage('depart')">🚀 Départs du jour</button>
+        <button class="tab" onclick="switchPointage('retour')">↩️ Retours attendus</button>
+        <button class="tab" onclick="switchPointage('retard')">⚠️ En retard</button>
+      </div>
+      <div id="pointageContent"></div>
+    </section>
+
+    <!-- ─── SECTION STOCK ─── -->
+    <section id="sectionStock" class="hidden">
+      <div class="page-header">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="page-title">Gestion du stock</h1>
+            <p class="page-subtitle">Ajout, modification et suppression du matériel</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddMaterial()">+ Ajouter matériel</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap" style="flex:1;">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Rechercher..." id="searchStock" oninput="renderStock()">
+        </div>
+        <select class="form-input" id="filterStockCat" style="width:auto;" onchange="renderStock()">
+          <option value="">Toutes catégories</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Catégorie</th>
+                <th>Type</th>
+                <th>Qté totale</th>
+                <th>Actif</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody"></tbody>
+          </table>
+        </div>
+        <div id="stockEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">🗄️</div>
+          <div class="empty-state-text">Aucun matériel</div>
+          <div class="empty-state-sub">Cliquez sur "Ajouter matériel" pour commencer</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECTION UTILISATEURS ─── -->
+    <section id="sectionUtilisateurs" class="hidden">
+      <div class="page-header">
+        <h1 class="page-title">Utilisateurs</h1>
+        <p class="page-subtitle">Gestion des comptes agents et administrateurs</p>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th>Identifiant</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+        <div id="usersEmpty" class="empty-state hidden">
+          <div class="empty-state-icon">👥</div>
+          <div class="empty-state-text">Aucun utilisateur</div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /main-content -->
+</div><!-- /appPage -->
+
+<!-- ════════════════════════════════════════
+     MODALS
+════════════════════════════════════════ -->
+
+<!-- Modal Config (premier lancement) -->
+<div id="modalConfig" class="modal-overlay hidden">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Statut du backend</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modalConfig')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="configStatus" style="padding:12px 16px; border-radius:var(--radius-sm); font-size:14px; line-height:1.6;"></div>
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-top:4px;">
+        <p class="text-sm text-muted" style="line-height:1.8;">
+          Pour changer l'URL du backend, modifie directement la constante <code style="background:var(--surface3);padding:1px 6px;border-radius:3px;">API_URL</code> en haut du fichier <code style="background:var(--surface3);padding:1px 6px;border-radius:3px;">gestion-materiel.html</code>, puis redistribue le fichier à tes agents.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="testApiConnection()">🔌 Tester la connexion</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalConfig')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Ajout/Edit Matériel -->
+<div id="modalMaterial" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalMaterialTitle">Ajouter du matériel</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modalMaterial')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="matId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Nom du matériel *</label>
+          <input type="text" class="form-input" id="matNom" placeholder="Ex: Appareil photo Nikon">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Catégorie *</label>
+          <input type="text" class="form-input" id="matCategorie" list="categorySuggestions" placeholder="Ex: Photo/Vidéo">
+          <datalist id="categorySuggestions"></datalist>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Icône (emoji)</label>
+          <input type="text" class="form-input" id="matIcone" placeholder="📷" maxlength="2">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select class="form-input" id="matType">
+            <option value="unitaire">Unitaire (ex: 1 appareil)</option>
+            <option value="quantite">Quantité (ex: 30 chaises)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantité totale</label>
+          <input type="number" class="form-input" id="matQte" min="1" value="1">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Description (optionnel)</label>
+          <input type="text" class="form-input" id="matDesc" placeholder="Informations complémentaires">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalMaterial')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveMaterial()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit Réservation -->
+<div id="modalEditRes" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Modifier la réservation</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modalEditRes')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editResId">
+      <div class="form-grid form-grid-2">
+        <div class="form-group">
+          <label class="form-label">Date de début</label>
+          <input type="date" class="form-input" id="editResDateDebut">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Demi-journée</label>
+          <select class="form-input" id="editResPeriodeDebut">
+            <option value="matin">Matin</option>
+            <option value="apm">Après-midi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date de fin</label>
+          <input type="date" class="form-input" id="editResDateFin">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Demi-journée</label>
+          <select class="form-input" id="editResPeriodeFin">
+            <option value="matin">Matin</option>
+            <option value="apm">Après-midi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Quantité</label>
+          <input type="number" class="form-input" id="editResQte" min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Statut</label>
+          <select class="form-input" id="editResStatut">
+            <option value="active">Active</option>
+            <option value="sortie">Sortie</option>
+            <option value="rendue">Rendue</option>
+            <option value="annulee">Annulée</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <label class="form-label">Notes</label>
+          <input type="text" class="form-input" id="editResNotes">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalEditRes')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveEditRes()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Détail Calendrier -->
+<div id="modalCalDay" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalCalDayTitle">Réservations du jour</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modalCalDay')">✕</button>
+    </div>
+    <div class="modal-body" id="modalCalDayBody"></div>
+  </div>
+</div>
+
+<!-- Modal Confirmation -->
+<div id="modalConfirm" class="modal-overlay hidden">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <div class="modal-title" id="confirmTitle">Confirmer l'action</div>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage" style="color:var(--text2);"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalConfirm')">Annuler</button>
+      <button class="btn btn-danger" id="confirmBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Loading -->
+<div id="modalLoading" class="modal-overlay hidden" style="pointer-events:all;">
+  <div style="text-align:center;color:var(--text2);">
+    <div class="loader" style="margin:0 auto 16px;"></div>
+    <div id="loadingMessage">Chargement...</div>
+  </div>
+</div>
+
+<!-- Modal Profil / Changement mot de passe -->
+<div id="modalProfil" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">👤 Mon profil</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modalProfil')">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Infos utilisateur -->
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--surface2);border-radius:var(--radius-sm);">
+        <div id="profilAvatar" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent3));display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0;">?</div>
+        <div>
+          <div id="profilNom" style="font-weight:600;font-size:15px;">—</div>
+          <div id="profilEmail" style="font-size:12px;color:var(--text2);">—</div>
+          <div id="profilRole" style="margin-top:3px;"></div>
+        </div>
+      </div>
+
+      <!-- Séparateur -->
+      <div style="border-top:1px solid var(--border);margin:4px 0;"></div>
+
+      <!-- Formulaire changement mdp -->
+      <div>
+        <p style="font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">🔑 Changer le mot de passe</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="form-group">
+            <label class="form-label">Mot de passe actuel</label>
+            <input type="password" class="form-input" id="pwActuel" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nouveau mot de passe</label>
+            <input type="password" class="form-input" id="pwNouveau" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmer le nouveau mot de passe</label>
+            <input type="password" class="form-input" id="pwConfirm" placeholder="••••••••" autocomplete="new-password">
+          </div>
+          <div id="pwError" class="hidden" style="color:var(--danger);font-size:13px;padding:8px 12px;background:rgba(247,106,106,0.1);border-radius:6px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalProfil')">Annuler</button>
+      <button class="btn btn-primary" onclick="changePassword()">Enregistrer le nouveau mot de passe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script>
+// ═══════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════
+const SESSION_KEY = 'laregie_session';
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONFIGURATION — À MODIFIER UNE SEULE FOIS                  ║
+// ║  Colle ici l'URL de ton Google Apps Script Web App           ║
+// ║  Laisser vide '' pour le mode démo                           ║
+// ╚══════════════════════════════════════════════════════════════╝
+const API_URL = 'https://script.google.com/macros/s/AKfycbwIM2ieq4vDuswT02eBDvwODlsfiHzaFBb5rT8kAtbyI5GDoFxePHE7T121HqV32QcTxg/exec';  // ← ex: 'https://script.google.com/macros/s/XXXXX/exec'
+let currentUser = null;
+let state = {
+  materiels: [],
+  reservations: [],
+  utilisateurs: [],
+  cart: [],
+  calMonth: new Date().getMonth(),
+  calYear: new Date().getFullYear(),
+  currentSection: '',
+  pointageTab: 'depart',
+  myResFilter: 'active',
+};
+
+// ── DEMO DATA (mode sans backend) ──
+const DEMO_MATERIELS = [
+  { id:'m1',  nom:'Flammes CCCA (petit modèle)',       categorie:'Communication', icone:'🔥', type:'quantite', qte:4,  actif:true, description:'' },
+  { id:'m2',  nom:'Flammes CCCA (grand modèle)',        categorie:'Communication', icone:'🔥', type:'quantite', qte:2,  actif:true, description:'' },
+  { id:'m3',  nom:'Nappe (180×140 cm)',                 categorie:'Communication', icone:'🟦', type:'quantite', qte:1,  actif:true, description:'' },
+  { id:'m4',  nom:'Rollup',                             categorie:'Communication', icone:'📰', type:'quantite', qte:4,  actif:true, description:'' },
+  { id:'m5',  nom:'Appareil photo Reflex Canon 700D',   categorie:'Photo/Vidéo',   icone:'📷', type:'unitaire', qte:1,  actif:true, description:'' },
+  { id:'m6',  nom:'Appareil photo Canon compact',       categorie:'Photo/Vidéo',   icone:'📸', type:'unitaire', qte:1,  actif:true, description:'' },
+  { id:'m7',  nom:'Caméra DJI stabilisée',              categorie:'Photo/Vidéo',   icone:'🎥', type:'unitaire', qte:1,  actif:true, description:'' },
+  { id:'m8',  nom:'GoPro 360°',                         categorie:'Photo/Vidéo',   icone:'🎬', type:'unitaire', qte:1,  actif:true, description:'' },
+  { id:'m9',  nom:'Micro Zoom H4n',                     categorie:'Audio',         icone:'🎙️', type:'unitaire', qte:1,  actif:true, description:'' },
+  { id:'m10', nom:'Cubes lumineux',                     categorie:'Éclairage',     icone:'🟧', type:'quantite', qte:6,  actif:true, description:'' },
+  { id:'m11', nom:'Par Led batteries (ambiance couleur)',categorie:'Éclairage',     icone:'💡', type:'quantite', qte:4,  actif:true, description:'' },
+  { id:'m12', nom:'Mini Par Led batteries (ambiance couleur)', categorie:'Éclairage', icone:'✨', type:'quantite', qte:20, actif:true, description:'' },
+  { id:'m13', nom:'Chèque géant effaçable (Velleda)',   categorie:'Animation',     icone:'✅', type:'quantite', qte:2,  actif:true, description:'' },
+];
+
+const today = new Date();
+// fmt sans timezone : évite le décalage UTC (bug +1j en France)
+const fmt = d => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const j = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${j}`;
+};
+const DEMO_RESERVATIONS = [
+  { id:'r1', agentId:'u2', agentNom:'Brandon Martin', materielId:'m5', materielNom:'Appareil photo Reflex Canon 700D', icone:'📷', qte:1, dateDebut: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate())), periodeDebut:'matin', dateFin: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()+1)), periodeFin:'apm', statut:'active', notes:'Reportage inauguration', created: new Date(today.getTime()-86400000).toISOString() },
+  { id:'r2', agentId:'u2', agentNom:'Brandon Martin', materielId:'m11', materielNom:'Par Led batteries (ambiance couleur)', icone:'💡', qte:2, dateDebut: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()+2)), periodeDebut:'matin', dateFin: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()+2)), periodeFin:'apm', statut:'active', notes:'', created: new Date().toISOString() },
+  { id:'r3', agentId:'u3', agentNom:'Florine Dubois', materielId:'m1', materielNom:'Flammes CCCA (petit modèle)', icone:'🔥', qte:2, dateDebut: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()+1)), periodeDebut:'apm', dateFin: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()+1)), periodeFin:'apm', statut:'active', notes:'Forum des associations', created: new Date().toISOString() },
+  { id:'r4', agentId:'u3', agentNom:'Florine Dubois', materielId:'m4', materielNom:'Rollup', icone:'📰', qte:4, dateDebut: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()-2)), periodeDebut:'matin', dateFin: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()-1)), periodeFin:'apm', statut:'rendue', notes:'', created: new Date(today.getTime()-259200000).toISOString() },
+  { id:'r5', agentId:'u2', agentNom:'Brandon Martin', materielId:'m9', materielNom:'Micro Zoom H4n', icone:'🎙️', qte:1, dateDebut: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate()-1)), periodeDebut:'matin', dateFin: fmt(new Date(today.getFullYear(), today.getMonth(), today.getDate())), periodeFin:'apm', statut:'sortie', notes:'', created: new Date(today.getTime()-172800000).toISOString() },
+];
+
+const DEMO_USERS = [
+  { id:'u1', nom:'Admin Julien', username:'admin', email:'admin@ccca.fr', role:'admin', actif:true },
+  { id:'u2', nom:'Brandon Martin', username:'brandon', email:'brandon@ccca.fr', role:'agent', actif:true },
+  { id:'u3', nom:'Florine Dubois', username:'florine', email:'florine@ccca.fr', role:'agent', actif:true },
+];
+
+// ═══════════════════════════════════════════
+// API LAYER (avec fallback démo)
+// ═══════════════════════════════════════════
+async function api(action, data = {}) {
+  if (!API_URL) {
+    return demoApi(action, data);
+  }
+  try {
+    // Google Apps Script + CORS : la seule solution fiable depuis un domaine externe
+    // est d'injecter un tag <script> (JSONP) car Apps Script suit une redirection 302
+    // qui perd les headers CORS. On wrappe ça dans une Promise propre.
+    const result = await jsonpCall(API_URL, { action, ...data });
+    if (!result.ok) throw new Error(result.error || 'Erreur API');
+    return result;
+  } catch(e) {
+    console.error('API Error:', e);
+    toast('Erreur de connexion. Mode démo activé.', 'error');
+    return demoApi(action, data);
+  }
+}
+
+// JSONP : contourne le blocage CORS de Google Apps Script
+// Apps Script répond avec un Content-Type JSON mais via une redirection 302
+// que fetch ne peut pas suivre cross-origin. Un <script> tag le peut.
+function jsonpCall(baseUrl, data) {
+  return new Promise((resolve, reject) => {
+    const cbName = '_laregie_cb_' + Date.now();
+    const payload = JSON.stringify(data);
+    const url = `${baseUrl}?callback=${cbName}&payload=${encodeURIComponent(payload)}`;
+
+    window[cbName] = function(result) {
+      delete window[cbName];
+      document.head.removeChild(script);
+      resolve(result);
+    };
+
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = () => {
+      delete window[cbName];
+      document.head.removeChild(script);
+      reject(new Error('Erreur réseau JSONP'));
+    };
+    // Timeout 15s
+    const timer = setTimeout(() => {
+      if (window[cbName]) {
+        delete window[cbName];
+        try { document.head.removeChild(script); } catch(e) {}
+        reject(new Error('Timeout'));
+      }
+    }, 15000);
+    script.onload = () => clearTimeout(timer);
+    document.head.appendChild(script);
+  });
+}
+
+function demoApi(action, data) {
+  const delay = () => new Promise(r => setTimeout(r, 250));
+  switch(action) {
+    case 'login': {
+      const u = DEMO_USERS.find(u => u.username === data.username && data.password === '1234');
+      if (!u) return { ok: false, error: 'Identifiant ou mot de passe incorrect' };
+      return { ok: true, user: u };
+    }
+    case 'register': {
+      if (DEMO_USERS.find(u => u.username === data.username)) return { ok: false, error: 'Identifiant déjà utilisé' };
+      const nu = { id:'u'+Date.now(), nom: data.nom, username: data.username, email: data.email, role:'agent', actif:false };
+      DEMO_USERS.push(nu);
+      return { ok: true, message: 'Compte créé, en attente de validation.' };
+    }
+    case 'getMaterialsAvailability': {
+      const { dateDebut, dateFin, periodeDebut, periodeFin } = data;
+      return {
+        ok: true,
+        materiels: DEMO_MATERIELS.map(m => {
+          const reserved = DEMO_RESERVATIONS
+            .filter(r => r.materielId === m.id && ['active','sortie'].includes(r.statut) && periodsOverlap(r.dateDebut, r.periodeDebut, r.dateFin, r.periodeFin, dateDebut, periodeDebut, dateFin, periodeFin))
+            .reduce((s, r) => s + r.qte, 0);
+          return { ...m, dispo: Math.max(0, m.qte - reserved), reserved };
+        })
+      };
+    }
+    case 'getMyReservations': return { ok: true, reservations: DEMO_RESERVATIONS.filter(r => r.agentId === data.userId) };
+    case 'getAllReservations': return { ok: true, reservations: DEMO_RESERVATIONS };
+    case 'addReservation': {
+      const items = data.items;
+      items.forEach(item => {
+        const mat = DEMO_MATERIELS.find(m => m.id === item.materielId);
+        DEMO_RESERVATIONS.push({
+          id: 'r'+Date.now()+Math.random(),
+          agentId: data.agentId, agentNom: data.agentNom,
+          materielId: item.materielId, materielNom: mat?.nom || '?', icone: mat?.icone || '📦',
+          qte: item.qte,
+          dateDebut: data.dateDebut, periodeDebut: data.periodeDebut,
+          dateFin: data.dateFin, periodeFin: data.periodeFin,
+          statut: 'active', notes: data.notes || '',
+          created: new Date().toISOString()
+        });
+      });
+      return { ok: true };
+    }
+    case 'updateReservation': {
+      const idx = DEMO_RESERVATIONS.findIndex(r => r.id === data.id);
+      if (idx >= 0) Object.assign(DEMO_RESERVATIONS[idx], data.updates);
+      return { ok: true };
+    }
+    case 'deleteReservation': {
+      const idx = DEMO_RESERVATIONS.findIndex(r => r.id === data.id);
+      if (idx >= 0) DEMO_RESERVATIONS[idx].statut = 'annulee';
+      return { ok: true };
+    }
+    case 'getMaterialsList': return { ok: true, materiels: DEMO_MATERIELS };
+    case 'addMaterial': {
+      const nm = { id:'m'+Date.now(), ...data, actif:true };
+      DEMO_MATERIELS.push(nm);
+      return { ok: true, materiel: nm };
+    }
+    case 'updateMaterial': {
+      const idx = DEMO_MATERIELS.findIndex(m => m.id === data.id);
+      if (idx >= 0) Object.assign(DEMO_MATERIELS[idx], data.updates);
+      return { ok: true };
+    }
+    case 'deleteMaterial': {
+      const idx = DEMO_MATERIELS.findIndex(m => m.id === data.id);
+      if (idx >= 0) DEMO_MATERIELS[idx].actif = false;
+      return { ok: true };
+    }
+    case 'getUsers': return { ok: true, users: DEMO_USERS };
+    case 'updateUser': {
+      const idx = DEMO_USERS.findIndex(u => u.id === data.id);
+      if (idx >= 0) Object.assign(DEMO_USERS[idx], data.updates);
+      return { ok: true };
+    }
+    case 'deleteUser': {
+      const idx = DEMO_USERS.findIndex(u => u.id === data.id);
+      if (idx >= 0) DEMO_USERS[idx].actif = false;
+      return { ok: true };
+    }
+    case 'sendReminders': return { ok: true, sent: 2 };
+    default: return { ok: false, error: 'Action inconnue: '+action };
+  }
+}
+
+// Overlap check demi-journée
+function periodsOverlap(d1s, p1s, d1e, p1e, d2s, p2s, d2e, p2e) {
+  if (!d1s || !d2s) return false;
+  const toHalf = (d, p) => d + (p === 'apm' ? 'b' : 'a');
+  const s1 = toHalf(d1s, p1s), e1 = toHalf(d1e, p1e);
+  const s2 = toHalf(d2s, p2s), e2 = toHalf(d2e, p2e);
+  return s1 <= e2 && s2 <= e1;
+}
+
+// ═══════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════
+function switchLoginTab(tab) {
+  document.querySelectorAll('.login-tab').forEach((t,i) => t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='register')));
+  document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+  document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+}
+
+async function handleLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const err = document.getElementById('loginError');
+  err.classList.add('hidden');
+  if (!username || !password) { err.textContent = 'Veuillez remplir tous les champs.'; err.classList.remove('hidden'); return; }
+  showLoading('Connexion...');
+  const res = await api('login', { username, password });
+  hideLoading();
+  if (!res.ok) { err.textContent = res.error; err.classList.remove('hidden'); return; }
+  if (!res.user.actif) { err.textContent = 'Votre compte est en attente de validation.'; err.classList.remove('hidden'); return; }
+  currentUser = res.user;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+  initApp();
+}
+
+async function handleRegister() {
+  const nom = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const err = document.getElementById('registerError');
+  err.classList.add('hidden');
+  if (!nom || !email || !username || !password) { err.textContent = 'Veuillez remplir tous les champs.'; err.classList.remove('hidden'); return; }
+  showLoading('Création du compte...');
+  const res = await api('register', { nom, email, username, password });
+  hideLoading();
+  if (!res.ok) { err.textContent = res.error; err.classList.remove('hidden'); return; }
+  toast('Compte créé ! En attente de validation par un administrateur.', 'success');
+  switchLoginTab('login');
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem(SESSION_KEY);
+  state.cart = [];
+  document.getElementById('loginPage').classList.remove('hidden');
+  document.getElementById('appPage').classList.add('hidden');
+  document.getElementById('loginUsername').value = '';
+  document.getElementById('loginPassword').value = '';
+}
+
+// ── PROFIL & CHANGEMENT MOT DE PASSE ──────────────────────────
+function openModal(id) {
+  // Pré-remplir le modal profil à l'ouverture
+  if (id === 'modalProfil' && currentUser) {
+    document.getElementById('profilAvatar').textContent = currentUser.nom.slice(0,2).toUpperCase();
+    document.getElementById('profilNom').textContent = currentUser.nom;
+    document.getElementById('profilEmail').textContent = currentUser.email || '—';
+    document.getElementById('profilRole').innerHTML = currentUser.role === 'admin'
+      ? '<span class="badge badge-accent">Admin</span>'
+      : '<span class="badge badge-gray">Agent</span>';
+    // Vider les champs mdp
+    ['pwActuel','pwNouveau','pwConfirm'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    document.getElementById('pwError').classList.add('hidden');
+  }
+  document.getElementById(id).classList.remove('hidden');
+}
+
+async function changePassword() {
+  const actuel  = document.getElementById('pwActuel').value;
+  const nouveau = document.getElementById('pwNouveau').value;
+  const confirm = document.getElementById('pwConfirm').value;
+  const errEl   = document.getElementById('pwError');
+  errEl.classList.add('hidden');
+
+  // Validations côté client
+  if (!actuel || !nouveau || !confirm) {
+    errEl.textContent = 'Tous les champs sont obligatoires.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (nouveau.length < 6) {
+    errEl.textContent = 'Le nouveau mot de passe doit contenir au moins 6 caractères.';
+    errEl.classList.remove('hidden'); return;
+  }
+  if (nouveau !== confirm) {
+    errEl.textContent = 'La confirmation ne correspond pas au nouveau mot de passe.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  showLoading('Vérification...');
+  // Vérifier l'ancien mot de passe en le testant via login
+  const check = await api('login', { username: currentUser.username, password: actuel });
+  if (!check.ok) {
+    hideLoading();
+    errEl.textContent = 'Mot de passe actuel incorrect.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  // Enregistrer le nouveau mot de passe
+  const res = await api('updateUser', { id: currentUser.id, updates: { password: nouveau } });
+  hideLoading();
+  if (!res.ok) {
+    errEl.textContent = 'Erreur lors de la mise à jour. Réessayez.';
+    errEl.classList.remove('hidden'); return;
+  }
+
+  closeModal('modalProfil');
+  toast('✅ Mot de passe modifié avec succès !', 'success');
+}
+
+// ═══════════════════════════════════════════
+// APP INIT
+// ═══════════════════════════════════════════
+function initApp() {
+  document.getElementById('loginPage').classList.add('hidden');
+  document.getElementById('appPage').classList.remove('hidden');
+  const isAdmin = currentUser.role === 'admin';
+  document.getElementById('agentNavTabs').classList.toggle('hidden', isAdmin);
+  document.getElementById('adminNavTabs').classList.toggle('hidden', !isAdmin);
+  document.getElementById('userNameDisplay').textContent = currentUser.nom.split(' ')[0];
+  document.getElementById('userAvatar').textContent = currentUser.nom.slice(0,2).toUpperCase();
+
+  // Default section
+  // Bouton ⚙️ visible uniquement pour les admins
+  const btnConfig = document.getElementById('btnConfig');
+  if (btnConfig) btnConfig.style.display = isAdmin ? 'inline-flex' : 'none';
+
+  if (!API_URL) {
+    toast('⚠️ Mode démo — aucun backend configuré (mdp: 1234)', 'info');
+  }
+  showSection(isAdmin ? 'dashboard' : 'catalogue');
+}
+
+function showSection(section) {
+  state.currentSection = section;
+  // Hide all sections
+  document.querySelectorAll('[id^="section"]').forEach(s => s.classList.add('hidden'));
+  // Activate correct section
+  const map = {
+    catalogue: 'sectionCatalogue',
+    mesReservations: 'sectionMesReservations',
+    agenda: 'sectionAgenda',
+    dashboard: 'sectionDashboard',
+    reservations: 'sectionReservations',
+    pointage: 'sectionPointage',
+    stock: 'sectionStock',
+    utilisateurs: 'sectionUtilisateurs',
+  };
+  const el = document.getElementById(map[section]);
+  if (el) el.classList.remove('hidden');
+
+  // Update nav active
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.toLowerCase().includes(getSectionLabel(section)));
+  });
+
+  // Load data
+  switch(section) {
+    case 'catalogue': loadCatalogue(); break;
+    case 'mesReservations': loadMyReservations(); break;
+    case 'agenda': loadCalendar(); break;
+    case 'dashboard': loadDashboard(); break;
+    case 'reservations': loadAdminReservations(); break;
+    case 'pointage': loadPointage(); break;
+    case 'stock': loadStock(); break;
+    case 'utilisateurs': loadUtilisateurs(); break;
+  }
+}
+
+function getSectionLabel(s) {
+  const map = { catalogue:'catalogue', mesReservations:'réservations', agenda:'agenda', dashboard:'dashboard', reservations:'réservations', pointage:'pointage', stock:'stock', utilisateurs:'utilisateurs' };
+  return map[s] || '';
+}
+
+// ═══════════════════════════════════════════
+// CATALOGUE
+// ═══════════════════════════════════════════
+async function loadCatalogue() {
+  // Set default dates
+  const d = new Date();
+  if (!document.getElementById('resDateDebut').value) {
+    document.getElementById('resDateDebut').value = fmt(d);
+    document.getElementById('resDateFin').value = fmt(d);
+  }
+  await filterMaterials();
+}
+
+async function filterMaterials() {
+  const dateDebut = document.getElementById('resDateDebut').value;
+  const dateFin = document.getElementById('resDateFin').value;
+  const periodeDebut = document.getElementById('resPeriodeDebut').value;
+  const periodeFin = document.getElementById('resPeriodeFin').value;
+  if (!dateDebut || !dateFin) return;
+  showLoading('Vérification des disponibilités...');
+  const res = await api('getMaterialsAvailability', { dateDebut, dateFin, periodeDebut, periodeFin });
+  hideLoading();
+  if (!res.ok) { toast('Erreur chargement', 'error'); return; }
+  state.materiels = res.materiels;
+  updateCategoryFilters(state.materiels);
+  renderMaterials();
+}
+
+function updateCategoryFilters(mats) {
+  const cats = [...new Set(mats.map(m => m.categorie))].sort();
+  ['filterCategory', 'filterStockCat'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const val = sel.value;
+    sel.innerHTML = '<option value="">Toutes catégories</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    sel.value = val;
+  });
+  // Datalist for material form
+  const dl = document.getElementById('categorySuggestions');
+  if (dl) dl.innerHTML = cats.map(c => `<option value="${c}">`).join('');
+}
+
+function renderMaterials() {
+  const search = document.getElementById('searchMaterial')?.value?.toLowerCase() || '';
+  const cat = document.getElementById('filterCategory')?.value || '';
+  const availOnly = document.getElementById('filterAvailOnly')?.checked || false;
+  let mats = state.materiels.filter(m => m.actif);
+  if (search) mats = mats.filter(m => m.nom.toLowerCase().includes(search) || m.categorie.toLowerCase().includes(search));
+  if (cat) mats = mats.filter(m => m.categorie === cat);
+  if (availOnly) mats = mats.filter(m => m.dispo > 0);
+  const grid = document.getElementById('materialGrid');
+  if (!mats.length) { grid.innerHTML = `<div style="grid-column:1/-1;"><div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">Aucun matériel trouvé</div></div></div>`; return; }
+  grid.innerHTML = mats.map(m => {
+    const cartItem = state.cart.find(c => c.materielId === m.id);
+    const cartQte = cartItem ? cartItem.qte : 0;
+    const pct = m.qte > 0 ? (m.dispo / m.qte) * 100 : 0;
+    const barClass = pct < 25 ? 'none' : pct < 50 ? 'low' : '';
+    const unavail = m.dispo <= 0;
+    return `<div class="material-card ${unavail ? 'unavailable' : ''}" onclick="${unavail ? '' : `addToCart('${m.id}')`}">
+      ${cartQte > 0 ? `<div class="in-cart-badge">${cartQte}</div>` : ''}
+      <div class="material-icon">${m.icone || '📦'}</div>
+      <div class="material-name">${esc(m.nom)}</div>
+      <div class="material-cat">${esc(m.categorie)}</div>
+      <div class="material-stock">
+        <div class="stock-bar-wrap"><div class="stock-bar ${barClass}" style="width:${pct}%"></div></div>
+        <span class="qty-badge ${unavail ? 'text-danger' : ''}">${unavail ? 'Indispo' : m.dispo + '/' + m.qte}</span>
+      </div>
+      ${m.description ? `<p class="text-xs text-muted mt-1">${esc(m.description)}</p>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// CART
+// ═══════════════════════════════════════════
+function addToCart(materielId) {
+  const mat = state.materiels.find(m => m.id === materielId);
+  if (!mat || mat.dispo <= 0) return;
+  const existing = state.cart.find(c => c.materielId === materielId);
+  if (existing) {
+    if (existing.qte >= mat.dispo) { toast('Quantité maximale atteinte', 'error'); return; }
+    existing.qte++;
+  } else {
+    state.cart.push({ materielId, nom: mat.nom, icone: mat.icone || '📦', type: mat.type, qte: 1, max: mat.dispo });
+  }
+  renderCart();
+  renderMaterials();
+  toast(`${mat.nom} ajouté au panier`, 'success');
+}
+
+function updateCartQty(materielId, delta) {
+  const idx = state.cart.findIndex(c => c.materielId === materielId);
+  if (idx < 0) return;
+  state.cart[idx].qte = Math.max(1, Math.min(state.cart[idx].max, state.cart[idx].qte + delta));
+  if (state.cart[idx].qte <= 0) state.cart.splice(idx, 1);
+  renderCart();
+  renderMaterials();
+}
+
+function removeFromCart(materielId) {
+  state.cart = state.cart.filter(c => c.materielId !== materielId);
+  renderCart();
+  renderMaterials();
+}
+
+function clearCart() {
+  state.cart = [];
+  renderCart();
+  renderMaterials();
+}
+
+function renderCart() {
+  const count = state.cart.reduce((s, c) => s + c.qte, 0);
+  document.getElementById('cartCount').textContent = count + (count > 1 ? ' articles' : ' article');
+  const footer = document.getElementById('cartFooter');
+  const body = document.getElementById('cartItems');
+  if (!state.cart.length) {
+    body.innerHTML = `<div class="empty-state" style="padding:30px 10px;"><div class="empty-state-icon">🛒</div><div class="empty-state-text">Panier vide</div><div class="empty-state-sub">Cliquez sur un matériel pour l'ajouter</div></div>`;
+    footer.classList.add('hidden');
+    return;
+  }
+  body.innerHTML = state.cart.map(c => `
+    <div class="cart-item">
+      <span style="font-size:18px;">${c.icone}</span>
+      <div class="cart-item-name">${esc(c.nom)}</div>
+      ${c.type === 'quantite' ? `
+      <div class="qty-control">
+        <button class="qty-btn" onclick="updateCartQty('${c.materielId}',-1)">−</button>
+        <span class="qty-num">${c.qte}</span>
+        <button class="qty-btn" onclick="updateCartQty('${c.materielId}',1)">+</button>
+      </div>` : `<span class="badge badge-accent">${c.qte}</span>`}
+      <button class="btn-ghost" style="background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:16px;" onclick="removeFromCart('${c.materielId}')">×</button>
+    </div>`).join('');
+  footer.classList.remove('hidden');
+}
+
+async function confirmReservation() {
+  if (!state.cart.length) return;
+  const dateDebut = document.getElementById('resDateDebut').value;
+  const dateFin = document.getElementById('resDateFin').value;
+  const periodeDebut = document.getElementById('resPeriodeDebut').value;
+  const periodeFin = document.getElementById('resPeriodeFin').value;
+  const notes = document.getElementById('cartNotes').value;
+  if (!dateDebut || !dateFin) { toast('Veuillez sélectionner les dates', 'error'); return; }
+  showLoading('Enregistrement de la réservation...');
+  const res = await api('addReservation', {
+    agentId: currentUser.id,
+    agentNom: currentUser.nom,
+    items: state.cart.map(c => ({ materielId: c.materielId, qte: c.qte })),
+    dateDebut, periodeDebut, dateFin, periodeFin, notes
+  });
+  hideLoading();
+  if (!res.ok) { toast(res.error || 'Erreur', 'error'); return; }
+  toast('Réservation confirmée ! 🎉', 'success');
+  clearCart();
+  filterMaterials();
+}
+
+// ═══════════════════════════════════════════
+// MES RESERVATIONS
+// ═══════════════════════════════════════════
+async function loadMyReservations() {
+  showLoading('Chargement...');
+  const res = await api('getMyReservations', { userId: currentUser.id });
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  state.reservations = res.reservations;
+  filterMyRes(state.myResFilter);
+}
+
+function filterMyRes(filter) {
+  state.myResFilter = filter;
+  document.querySelectorAll('#sectionMesReservations .tab').forEach((t,i) => {
+    t.classList.toggle('active', ['active','future','past'][i] === filter);
+  });
+  const now = fmt(new Date());
+  let res = state.reservations;
+  if (filter === 'active') res = res.filter(r => r.dateDebut <= now && r.dateFin >= now && r.statut !== 'rendue' && r.statut !== 'annulee');
+  else if (filter === 'future') res = res.filter(r => r.dateDebut > now && r.statut !== 'annulee');
+  else res = res.filter(r => r.dateFin < now || r.statut === 'rendue');
+  renderResTable('myResTableBody', 'myResEmpty', res, false);
+}
+
+// ═══════════════════════════════════════════
+// ADMIN RESERVATIONS
+// ═══════════════════════════════════════════
+async function loadAdminReservations() {
+  showLoading('Chargement...');
+  const res = await api('getAllReservations');
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  state.reservations = res.reservations;
+  renderAdminRes();
+}
+
+function renderAdminRes() {
+  const search = document.getElementById('searchRes')?.value?.toLowerCase() || '';
+  const statut = document.getElementById('filterResStatut')?.value || '';
+  const date = document.getElementById('filterResDate')?.value || '';
+  let res = state.reservations;
+  if (search) res = res.filter(r => r.agentNom?.toLowerCase().includes(search) || r.materielNom?.toLowerCase().includes(search));
+  if (statut) res = res.filter(r => r.statut === statut);
+  if (date) res = res.filter(r => r.dateDebut <= date && r.dateFin >= date);
+  renderResTable('adminResTableBody', 'adminResEmpty', res, true);
+}
+
+function renderResTable(tbodyId, emptyId, res, isAdmin) {
+  const tbody = document.getElementById(tbodyId);
+  const empty = document.getElementById(emptyId);
+  if (!res.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  tbody.innerHTML = res.map(r => `
+    <tr>
+      ${isAdmin ? `<td><span class="fw-500">${esc(r.agentNom)}</span></td>` : ''}
+      <td><span style="margin-right:6px;">${r.icone||'📦'}</span>${esc(r.materielNom)}</td>
+      <td>${r.qte}</td>
+      <td>${formatDate(r.dateDebut)} <span class="badge badge-gray text-xs">${r.periodeDebut==='matin'?'AM':'PM'}</span></td>
+      <td>${formatDate(r.dateFin)} <span class="badge badge-gray text-xs">${r.periodeFin==='matin'?'AM':'PM'}</span></td>
+      <td>${statutBadge(r.statut)}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          ${isAdmin ? `<button class="btn btn-ghost btn-sm" onclick="openEditRes('${r.id}')">✏️</button>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="cancelReservation('${r.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openEditRes(id) {
+  const r = state.reservations.find(r => r.id === id);
+  if (!r) return;
+  document.getElementById('editResId').value = r.id;
+  document.getElementById('editResDateDebut').value = r.dateDebut;
+  document.getElementById('editResPeriodeDebut').value = r.periodeDebut;
+  document.getElementById('editResDateFin').value = r.dateFin;
+  document.getElementById('editResPeriodeFin').value = r.periodeFin;
+  document.getElementById('editResQte').value = r.qte;
+  document.getElementById('editResStatut').value = r.statut;
+  document.getElementById('editResNotes').value = r.notes || '';
+  openModal('modalEditRes');
+}
+
+async function saveEditRes() {
+  const id = document.getElementById('editResId').value;
+  const updates = {
+    dateDebut: document.getElementById('editResDateDebut').value,
+    periodeDebut: document.getElementById('editResPeriodeDebut').value,
+    dateFin: document.getElementById('editResDateFin').value,
+    periodeFin: document.getElementById('editResPeriodeFin').value,
+    qte: parseInt(document.getElementById('editResQte').value),
+    statut: document.getElementById('editResStatut').value,
+    notes: document.getElementById('editResNotes').value,
+  };
+  showLoading('Modification...');
+  const res = await api('updateReservation', { id, updates });
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  closeModal('modalEditRes');
+  toast('Réservation modifiée', 'success');
+  loadAdminReservations();
+}
+
+function cancelReservation(id) {
+  showConfirm('Annuler la réservation', 'Êtes-vous sûr de vouloir annuler cette réservation ?', async () => {
+    showLoading('Annulation...');
+    const res = await api('deleteReservation', { id });
+    hideLoading();
+    if (!res.ok) { toast('Erreur', 'error'); return; }
+    toast('Réservation annulée', 'success');
+    if (currentUser.role === 'admin') loadAdminReservations();
+    else loadMyReservations();
+  });
+}
+
+// ═══════════════════════════════════════════
+// CALENDRIER
+// ═══════════════════════════════════════════
+function loadCalendar() {
+  api('getAllReservations').then(res => {
+    if (res.ok) { state.reservations = res.reservations; renderCalendar(); }
+  });
+  renderCalendar();
+}
+
+function changeMonth(delta) {
+  state.calMonth += delta;
+  if (state.calMonth > 11) { state.calMonth = 0; state.calYear++; }
+  if (state.calMonth < 0) { state.calMonth = 11; state.calYear--; }
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  document.getElementById('calTitle').textContent = `${months[state.calMonth]} ${state.calYear}`;
+  document.getElementById('calDayNames').innerHTML = days.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+  const firstDay = new Date(state.calYear, state.calMonth, 1);
+  const lastDay = new Date(state.calYear, state.calMonth+1, 0);
+  let startDow = firstDay.getDay();
+  if (startDow === 0) startDow = 7;
+  const todayStr = fmt(new Date());
+  const cells = [];
+  for (let i = 1; i < startDow; i++) {
+    const d = new Date(state.calYear, state.calMonth, 1 - (startDow - i));
+    cells.push({ date: fmt(d), day: d.getDate(), other: true });
+  }
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    cells.push({ date: fmt(new Date(state.calYear, state.calMonth, d)), day: d, other: false });
+  }
+  while (cells.length % 7 !== 0) {
+    const last = new Date(state.calYear, state.calMonth+1, cells.length - lastDay.getDate() - startDow + 2);
+    cells.push({ date: fmt(last), day: last.getDate(), other: true });
+  }
+  const COLORS = ['#7c6af7','#f7c26a','#6af7c2','#f76a6a','#6ab4f7','#f76ac8','#a8f76a'];
+  const matColor = {};
+  document.getElementById('calCells').innerHTML = cells.map(cell => {
+    const dayRes = state.reservations.filter(r => r.statut !== 'annulee' && r.dateDebut <= cell.date && r.dateFin >= cell.date);
+    let eventsHtml = '';
+    if (currentUser.role === 'agent') {
+      const mine = dayRes.filter(r => r.agentId === currentUser.id);
+      eventsHtml = mine.slice(0,3).map(r => {
+        if (!matColor[r.materielId]) matColor[r.materielId] = COLORS[Object.keys(matColor).length % COLORS.length];
+        return `<div class="cal-event" style="background:${matColor[r.materielId]}22;color:${matColor[r.materielId]};" onclick="openDayModal('${cell.date}',event)">${r.icone||'📦'} ${r.materielNom}</div>`;
+      }).join('');
+    } else {
+      const groups = {};
+      dayRes.forEach(r => { if (!groups[r.materielNom]) groups[r.materielNom] = 0; groups[r.materielNom] += r.qte; });
+      eventsHtml = Object.entries(groups).slice(0,3).map(([nom, qte], i) => {
+        const c = COLORS[i % COLORS.length];
+        return `<div class="cal-event" style="background:${c}22;color:${c};" onclick="openDayModal('${cell.date}',event)">${nom} ×${qte}</div>`;
+      }).join('');
+      if (Object.keys(groups).length > 3) eventsHtml += `<div class="cal-event" style="background:var(--border);color:var(--text2);">+${Object.keys(groups).length-3} autres</div>`;
+    }
+    const isToday = cell.date === todayStr;
+    const dateEl = isToday ? `<div class="cal-date today-num">${cell.day}</div>` : `<div class="cal-date">${cell.day}</div>`;
+    return `<div class="cal-cell ${isToday?'today':''} ${cell.other?'other-month':''}" onclick="openDayModal('${cell.date}',event)">${dateEl}${eventsHtml}</div>`;
+  }).join('');
+}
+
+function openDayModal(dateStr, e) {
+  e.stopPropagation();
+  const dayRes = state.reservations.filter(r => r.statut !== 'annulee' && r.dateDebut <= dateStr && r.dateFin >= dateStr);
+  if (currentUser.role === 'agent') {
+    const mine = dayRes.filter(r => r.agentId === currentUser.id);
+    if (!mine.length) return;
+  } else if (!dayRes.length) return;
+  const show = currentUser.role === 'agent' ? dayRes.filter(r => r.agentId === currentUser.id) : dayRes;
+  document.getElementById('modalCalDayTitle').textContent = `📅 ${formatDate(dateStr)}`;
+  document.getElementById('modalCalDayBody').innerHTML = show.map(r => `
+    <div class="check-row">
+      <span style="font-size:22px;">${r.icone||'📦'}</span>
+      <div style="flex:1;">
+        <div class="fw-500">${esc(r.materielNom)} <span class="text-muted">×${r.qte}</span></div>
+        <div class="text-sm text-muted">${esc(r.agentNom)} · ${statutBadge(r.statut)}</div>
+        ${r.notes ? `<div class="text-xs text-muted mt-1">📝 ${esc(r.notes)}</div>` : ''}
+      </div>
+    </div>`).join('') || '<div class="text-muted">Aucune réservation</div>';
+  openModal('modalCalDay');
+}
+
+// ═══════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════
+async function loadDashboard() {
+  showLoading('Chargement du dashboard...');
+  const [resAll, matsAll] = await Promise.all([
+    api('getAllReservations'),
+    api('getMaterialsList'),
+  ]);
+  hideLoading();
+  if (!resAll.ok || !matsAll.ok) { toast('Erreur', 'error'); return; }
+  state.reservations = resAll.reservations;
+  state.materiels = matsAll.materiels;
+  renderDashboard();
+}
+
+function renderDashboard() {
+  const today = fmt(new Date());
+  const in7 = fmt(new Date(Date.now() + 7*86400000));
+  const active = state.reservations.filter(r => ['active','sortie'].includes(r.statut));
+  const departsToday = state.reservations.filter(r => r.dateDebut === today && r.statut === 'active');
+  const retourToday = state.reservations.filter(r => r.dateFin === today && r.statut === 'sortie');
+  const retards = state.reservations.filter(r => r.dateFin < today && r.statut === 'sortie');
+  document.getElementById('statTotalMat').textContent = state.materiels.filter(m=>m.actif).length;
+  document.getElementById('statDepart').textContent = departsToday.length;
+  document.getElementById('statRetour').textContent = retourToday.length;
+  document.getElementById('statRetard').textContent = retards.length;
+  document.getElementById('dashRetardCount').textContent = retards.length;
+
+  // À sortir 7j
+  const prochains = state.reservations.filter(r => r.dateDebut > today && r.dateDebut <= in7 && r.statut === 'active').sort((a,b) => a.dateDebut.localeCompare(b.dateDebut));
+  document.getElementById('dashDepart').innerHTML = prochains.length ? prochains.map(r => `
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--accent2)"></div>
+      <div class="timeline-content">
+        <div class="timeline-title">${r.icone||'📦'} ${esc(r.materielNom)} ×${r.qte}</div>
+        <div class="timeline-sub">${esc(r.agentNom)} · ${formatDate(r.dateDebut)} ${r.periodeDebut==='matin'?'matin':'après-midi'}</div>
+      </div>
+    </div>`).join('') : '<p class="text-sm text-muted">Aucun départ prévu</p>';
+
+  // Retours 7j
+  const retours = state.reservations.filter(r => r.dateFin >= today && r.dateFin <= in7 && r.statut === 'sortie').sort((a,b) => a.dateFin.localeCompare(b.dateFin));
+  document.getElementById('dashRetour').innerHTML = retours.length ? retours.map(r => `
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--accent3)"></div>
+      <div class="timeline-content">
+        <div class="timeline-title">${r.icone||'📦'} ${esc(r.materielNom)} ×${r.qte}</div>
+        <div class="timeline-sub">${esc(r.agentNom)} · Retour ${formatDate(r.dateFin)}</div>
+      </div>
+    </div>`).join('') : '<p class="text-sm text-muted">Aucun retour prévu</p>';
+
+  // Retards
+  document.getElementById('dashRetard').innerHTML = retards.length ? retards.map(r => `
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:var(--danger)"></div>
+      <div class="timeline-content">
+        <div class="timeline-title">${r.icone||'📦'} ${esc(r.materielNom)} ×${r.qte}</div>
+        <div class="timeline-sub" style="color:var(--danger);">${esc(r.agentNom)} · Prévu le ${formatDate(r.dateFin)}</div>
+      </div>
+    </div>`).join('') : '<p class="text-sm text-muted" style="padding:10px 0;">Aucun retard 🎉</p>';
+
+  // Stock restant
+  document.getElementById('dashStock').innerHTML = state.materiels.filter(m=>m.actif).map(m => {
+    const reserved = active.filter(r => r.materielId === m.id).reduce((s,r) => s+r.qte, 0);
+    const dispo = Math.max(0, m.qte - reserved);
+    const pct = m.qte > 0 ? (dispo/m.qte)*100 : 0;
+    const col = pct < 25 ? 'var(--danger)' : pct < 60 ? 'var(--accent2)' : 'var(--accent3)';
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">
+        <span>${m.icone||'📦'} ${esc(m.nom)}</span>
+        <span style="color:${col};font-weight:600;">${dispo}/${m.qte}</span>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${col};"></div></div>
+    </div>`;
+  }).join('') || '<p class="text-sm text-muted">Aucun matériel</p>';
+}
+
+async function sendReminders() {
+  showLoading('Envoi des rappels...');
+  const res = await api('sendReminders');
+  hideLoading();
+  toast(res.ok ? `${res.sent} rappel(s) envoyé(s) 📧` : 'Erreur envoi', res.ok ? 'success' : 'error');
+}
+
+// ═══════════════════════════════════════════
+// POINTAGE
+// ═══════════════════════════════════════════
+async function loadPointage() {
+  showLoading('Chargement...');
+  const res = await api('getAllReservations');
+  hideLoading();
+  if (!res.ok) return;
+  state.reservations = res.reservations;
+  renderPointage();
+}
+
+function switchPointage(tab) {
+  state.pointageTab = tab;
+  document.querySelectorAll('#sectionPointage .tab').forEach((t,i) => {
+    t.classList.toggle('active', ['depart','retour','retard'][i] === tab);
+  });
+  renderPointage();
+}
+
+function renderPointage() {
+  const today = fmt(new Date());
+  let items;
+  if (state.pointageTab === 'depart') {
+    items = state.reservations.filter(r => r.dateDebut === today && r.statut === 'active');
+  } else if (state.pointageTab === 'retour') {
+    items = state.reservations.filter(r => r.dateFin === today && r.statut === 'sortie');
+  } else {
+    items = state.reservations.filter(r => r.dateFin < today && r.statut === 'sortie');
+  }
+  const isDepart = state.pointageTab === 'depart';
+  const isRetard = state.pointageTab === 'retard';
+  const content = document.getElementById('pointageContent');
+  if (!items.length) {
+    content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">${isDepart ? '🚀' : isRetard ? '⚠️' : '↩️'}</div><div class="empty-state-text">${isDepart ? 'Aucun départ prévu aujourd\'hui' : isRetard ? 'Aucun retard' : 'Aucun retour attendu aujourd\'hui'}</div></div>`;
+    return;
+  }
+  content.innerHTML = `<div class="card"><div style="display:flex;flex-direction:column;gap:6px;">` +
+    items.map(r => `
+    <div class="check-row">
+      <div class="check-status ${r.statut === 'sortie' && isDepart ? 'checked' : r.statut === 'rendue' ? 'checked' : ''}" onclick="togglePointage('${r.id}','${isDepart ? 'depart' : 'retour'}')">
+        ${(r.statut === 'sortie' && isDepart) || r.statut === 'rendue' ? '✓' : ''}
+      </div>
+      <span style="font-size:22px;">${r.icone||'📦'}</span>
+      <div style="flex:1;">
+        <div class="fw-500">${esc(r.materielNom)} <span class="text-muted">×${r.qte}</span></div>
+        <div class="text-sm text-muted">${esc(r.agentNom)} · ${isDepart ? 'Départ' : 'Retour prévu le'} ${formatDate(isDepart ? r.dateDebut : r.dateFin)}</div>
+        ${r.notes ? `<div class="text-xs text-muted">📝 ${esc(r.notes)}</div>` : ''}
+      </div>
+      <button class="btn btn-sm ${isDepart ? 'btn-green' : 'btn-gold'}" onclick="togglePointage('${r.id}','${isDepart ? 'depart' : 'retour'}')">
+        ${isDepart ? (r.statut === 'sortie' ? '↩ Annuler sortie' : '🚀 Sortir') : (r.statut === 'rendue' ? '↩ Annuler retour' : '✅ Retour confirmé')}
+      </button>
+    </div>`).join('') +
+  `</div></div>`;
+}
+
+async function togglePointage(id, type) {
+  const r = state.reservations.find(r => r.id === id);
+  if (!r) return;
+  let newStatut;
+  if (type === 'depart') newStatut = r.statut === 'sortie' ? 'active' : 'sortie';
+  else newStatut = r.statut === 'rendue' ? 'sortie' : 'rendue';
+  showLoading('Pointage...');
+  const res = await api('updateReservation', { id, updates: { statut: newStatut } });
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  r.statut = newStatut;
+  toast(type === 'depart' ? (newStatut === 'sortie' ? 'Sortie enregistrée 🚀' : 'Sortie annulée') : (newStatut === 'rendue' ? 'Retour confirmé ✅' : 'Retour annulé'), 'success');
+  renderPointage();
+}
+
+// ═══════════════════════════════════════════
+// STOCK
+// ═══════════════════════════════════════════
+async function loadStock() {
+  showLoading('Chargement...');
+  const res = await api('getMaterialsList');
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  state.materiels = res.materiels;
+  updateCategoryFilters(state.materiels);
+  renderStock();
+}
+
+function renderStock() {
+  const search = document.getElementById('searchStock')?.value?.toLowerCase() || '';
+  const cat = document.getElementById('filterStockCat')?.value || '';
+  let mats = state.materiels;
+  if (search) mats = mats.filter(m => m.nom.toLowerCase().includes(search));
+  if (cat) mats = mats.filter(m => m.categorie === cat);
+  const tbody = document.getElementById('stockTableBody');
+  const empty = document.getElementById('stockEmpty');
+  if (!mats.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  tbody.innerHTML = mats.map(m => `
+    <tr>
+      <td><span style="margin-right:8px;">${m.icone||'📦'}</span><span class="fw-500">${esc(m.nom)}</span>${m.description ? `<div class="text-xs text-muted">${esc(m.description)}</div>` : ''}</td>
+      <td><span class="badge badge-gray">${esc(m.categorie)}</span></td>
+      <td><span class="badge ${m.type==='unitaire'?'badge-accent':'badge-gold'}">${m.type}</span></td>
+      <td class="fw-500">${m.qte}</td>
+      <td>${m.actif ? '<span class="badge badge-green">✓ Actif</span>' : '<span class="badge badge-red">✕ Inactif</span>'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-ghost btn-sm" onclick="openEditMaterial('${m.id}')">✏️ Modifier</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMaterial('${m.id}')">✕</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function openAddMaterial() {
+  document.getElementById('modalMaterialTitle').textContent = 'Ajouter du matériel';
+  document.getElementById('matId').value = '';
+  document.getElementById('matNom').value = '';
+  document.getElementById('matCategorie').value = '';
+  document.getElementById('matIcone').value = '';
+  document.getElementById('matType').value = 'unitaire';
+  document.getElementById('matQte').value = '1';
+  document.getElementById('matDesc').value = '';
+  openModal('modalMaterial');
+}
+
+function openEditMaterial(id) {
+  const m = state.materiels.find(m => m.id === id);
+  if (!m) return;
+  document.getElementById('modalMaterialTitle').textContent = 'Modifier le matériel';
+  document.getElementById('matId').value = m.id;
+  document.getElementById('matNom').value = m.nom;
+  document.getElementById('matCategorie').value = m.categorie;
+  document.getElementById('matIcone').value = m.icone || '';
+  document.getElementById('matType').value = m.type;
+  document.getElementById('matQte').value = m.qte;
+  document.getElementById('matDesc').value = m.description || '';
+  openModal('modalMaterial');
+}
+
+async function saveMaterial() {
+  const id = document.getElementById('matId').value;
+  const nom = document.getElementById('matNom').value.trim();
+  const categorie = document.getElementById('matCategorie').value.trim();
+  if (!nom || !categorie) { toast('Nom et catégorie obligatoires', 'error'); return; }
+  const data = {
+    nom, categorie,
+    icone: document.getElementById('matIcone').value || '📦',
+    type: document.getElementById('matType').value,
+    qte: parseInt(document.getElementById('matQte').value) || 1,
+    description: document.getElementById('matDesc').value,
+  };
+  showLoading('Enregistrement...');
+  const res = await api(id ? 'updateMaterial' : 'addMaterial', id ? { id, updates: data } : data);
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  closeModal('modalMaterial');
+  toast(id ? 'Matériel modifié' : 'Matériel ajouté ✅', 'success');
+  loadStock();
+}
+
+function deleteMaterial(id) {
+  const m = state.materiels.find(m => m.id === id);
+  showConfirm('Désactiver le matériel', `Désactiver "${m?.nom}" ? Il ne sera plus disponible à la réservation.`, async () => {
+    showLoading('...');
+    const res = await api('deleteMaterial', { id });
+    hideLoading();
+    if (!res.ok) { toast('Erreur', 'error'); return; }
+    toast('Matériel désactivé', 'success');
+    loadStock();
+  });
+}
+
+// ═══════════════════════════════════════════
+// UTILISATEURS
+// ═══════════════════════════════════════════
+async function loadUtilisateurs() {
+  showLoading('Chargement...');
+  const res = await api('getUsers');
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  state.utilisateurs = res.users;
+  renderUsers();
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('usersTableBody');
+  const empty = document.getElementById('usersEmpty');
+  if (!state.utilisateurs.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  tbody.innerHTML = state.utilisateurs.map(u => `
+    <tr>
+      <td class="fw-500">${esc(u.nom)}</td>
+      <td><code style="background:var(--surface3);padding:2px 6px;border-radius:4px;font-size:12px;">${esc(u.username)}</code></td>
+      <td class="text-muted">${esc(u.email)}</td>
+      <td>${u.role === 'admin' ? '<span class="badge badge-accent">Admin</span>' : '<span class="badge badge-gray">Agent</span>'}</td>
+      <td>${u.actif ? '<span class="badge badge-green">Actif</span>' : '<span class="badge badge-red">En attente</span>'}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          ${!u.actif ? `<button class="btn btn-green btn-sm" onclick="activateUser('${u.id}')">✓ Activer</button>` : ''}
+          ${u.role !== 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="toggleAdminRole('${u.id}','${u.role}')">→ ${u.role==='admin'?'Agent':'Admin'}</button>` : ''}
+          ${u.id !== currentUser.id ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">✕</button>` : ''}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+async function activateUser(id) {
+  showLoading('...');
+  const res = await api('updateUser', { id, updates: { actif: true } });
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  toast('Utilisateur activé ✅', 'success');
+  loadUtilisateurs();
+}
+
+async function toggleAdminRole(id, currentRole) {
+  const newRole = currentRole === 'admin' ? 'agent' : 'admin';
+  showLoading('...');
+  const res = await api('updateUser', { id, updates: { role: newRole } });
+  hideLoading();
+  if (!res.ok) { toast('Erreur', 'error'); return; }
+  toast(`Rôle modifié → ${newRole}`, 'success');
+  loadUtilisateurs();
+}
+
+function deleteUser(id) {
+  const u = state.utilisateurs.find(u => u.id === id);
+  showConfirm('Supprimer l\'utilisateur', `Supprimer le compte de "${u?.nom}" ?`, async () => {
+    showLoading('...');
+    const res = await api('deleteUser', { id });
+    hideLoading();
+    if (!res.ok) { toast('Erreur', 'error'); return; }
+    toast('Utilisateur supprimé', 'success');
+    loadUtilisateurs();
+  });
+}
+
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+async function testApiConnection() {
+  if (!API_URL) {
+    showStatus('error', '❌ Aucun backend configuré. Renseigne la constante API_URL dans le fichier HTML.');
+    return;
+  }
+  showStatus('info', '🔌 Test de connexion en cours...');
+  try {
+    const result = await jsonpCall(API_URL, { action: 'ping' });
+    if (result.ok) {
+      showStatus('success', '✅ Backend opérationnel — ' + (result.message || 'connexion réussie'));
+    } else {
+      showStatus('error', '⚠️ Backend joignable mais erreur : ' + (result.message || result.error || 'inconnue'));
+    }
+  } catch(e) {
+    showStatus('error', '❌ Connexion impossible : ' + e.message);
+  }
+}
+
+function showStatus(type, message) {
+  const el = document.getElementById('configStatus');
+  const styles = {
+    success: 'background:rgba(106,247,194,0.12);border:1px solid rgba(106,247,194,0.3);color:var(--accent3);',
+    error:   'background:rgba(247,106,106,0.12);border:1px solid rgba(247,106,106,0.3);color:var(--danger);',
+    info:    'background:rgba(124,106,247,0.12);border:1px solid rgba(124,106,247,0.3);color:var(--accent);',
+  };
+  el.style.cssText = styles[type] || styles.info;
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function saveConfig() {
+  // L'URL est désormais codée en dur dans API_URL au début du fichier
+  // Cette fonction n'est plus utilisée pour la config
+  closeModal('modalConfig');
+}
+
+// ═══════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function showLoading(msg = 'Chargement...') {
+  document.getElementById('loadingMessage').textContent = msg;
+  document.getElementById('modalLoading').classList.remove('hidden');
+}
+function hideLoading() { document.getElementById('modalLoading').classList.add('hidden'); }
+
+function toast(message, type = 'info') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+  el.innerHTML = `<span>${icons[type]||'💬'}</span><span>${esc(message)}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+function showConfirm(title, message, onConfirm) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmBtn').onclick = () => { closeModal('modalConfirm'); onConfirm(); };
+  openModal('modalConfirm');
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function statutBadge(s) {
+  const map = {
+    active: '<span class="badge badge-accent">Active</span>',
+    sortie: '<span class="badge badge-gold">Sortie</span>',
+    rendue: '<span class="badge badge-green">Rendue</span>',
+    annulee: '<span class="badge badge-red">Annulée</span>',
+  };
+  return map[s] || s;
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay && overlay.id !== 'modalLoading' && overlay.id !== 'modalConfig') {
+      overlay.classList.add('hidden');
+    }
+  });
+});
+
+// ═══════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════
+(function boot() {
+  // ── Listeners login/register (évite les erreurs "not defined" au parse) ──
+  document.getElementById('btnLogin').addEventListener('click', handleLogin);
+  document.getElementById('btnRegister').addEventListener('click', handleRegister);
+
+  // Valider avec Entrée sur les champs login
+  ['loginUsername','loginPassword'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  });
+  // Valider avec Entrée sur les champs register
+  ['regName','regEmail','regUsername','regPassword'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleRegister();
+    });
+  });
+
+  // ── Restore session ──
+  const saved = localStorage.getItem(SESSION_KEY);
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      initApp();
+      return;
+    } catch(e) {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }
+  // Afficher la page de login dans tous les cas
+  document.getElementById('loginPage').classList.remove('hidden');
+})();
+</script>
+
+</body>
+</html>
